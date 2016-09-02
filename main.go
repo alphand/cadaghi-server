@@ -51,11 +51,12 @@ func SetupNegroni() *negroni.Negroni {
 	neg := negroni.Classic()
 
 	accHdl := &acc.Handler{
-		OAuthGHConf: oauthGithubConf,
+		Context:    oauth2.NoContext,
+		OAuth2Conf: oauthGithubConf,
 	}
 
-	router.HandleFunc("/", helloFunc)
-	router.HandleFunc("/accounts/github", accHdl.HandleGithubExchange).Methods("POST")
+	router.HandleFunc("/", accHdl.Hello())
+	router.HandleFunc("/accounts/github", accHdl.HandleGithubExchange()).Methods("POST")
 
 	neg.UseHandler(router)
 

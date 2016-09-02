@@ -3,25 +3,12 @@ package accounts
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
-	githuboauth "golang.org/x/oauth2/github"
 )
-
-var (
-	oauthGithubConf = &oauth2.Config{
-		ClientID:     "6a418b2d916f57eb921c",
-		ClientSecret: "35d7548d80049e6b4ac962e77f81e095330702b8",
-		Scopes:       []string{"user:email"},
-		Endpoint:     githuboauth.Endpoint,
-	}
-	oauthStateString = "SuperWierdandLongTextTOdeterminethis"
-)
-
-type githubToken struct {
-	accessToken string
-}
 
 type ghCode struct {
 	Code string
@@ -29,30 +16,40 @@ type ghCode struct {
 
 // Handler - Handle All Account Related
 type Handler struct {
-	OAuthGHConf *oauth2.Config
+	Context    context.Context
+	OAuth2Conf *oauth2.Config
+}
+
+func (h *Handler) Hello() http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Content-Type", "plain/text")
+		io.WriteString(rw, "Hello World! path: "+req.URL.Path)
+	}
 }
 
 // HandleGithubExchange - exchagne github code to GH token
-func (h *Handler) HandleGithubExchange(rw http.ResponseWriter, req *http.Request) {
-	rw.Header().Set("Content-Type", "application/json")
+func (h *Handler) HandleGithubExchange() http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Content-Type", "application/json")
 
-	var reqBody ghCode
-	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&reqBody)
-	if err != nil {
-		j, _ := json.Marshal(err)
+		var reqBody ghCode
+		decoder := json.NewDecoder(req.Body)
+		err := decoder.Decode(&reqBody)
+		if err != nil {
+			j, _ := json.Marshal(err)
+			rw.Write(j)
+			return
+		}
+
+		token, err := h.OAuth2Conf.Exchange(h.Context, reqBody.Code)
+		if err != nil {
+			fmt.Printf("github oauth exchange failed with %s", err)
+			j, _ := json.Marshal(err)
+			rw.Write(j)
+			return
+		}
+
+		j, _ := json.Marshal(token)
 		rw.Write(j)
-		return
 	}
-
-	token, err := h.OAuthGHConf.Exchange(oauth2.NoContext, reqBody.Code)
-	if err != nil {
-		fmt.Printf("github oauth exchange failed with %s", err)
-		j, _ := json.Marshal(err)
-		rw.Write(j)
-		return
-	}
-
-	j, _ := json.Marshal(token)
-	rw.Write(j)
 }
