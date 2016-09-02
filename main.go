@@ -12,6 +12,7 @@ import (
 	"github.com/urfave/negroni"
 
 	acc "github.com/alphand/skilltree-server/accounts"
+	"github.com/alphand/skilltree-server/middleware"
 	ghoauth "golang.org/x/oauth2/github"
 )
 
@@ -48,7 +49,9 @@ func main() {
 func SetupNegroni() *negroni.Negroni {
 	router := mux.NewRouter()
 
-	neg := negroni.Classic()
+	neg := negroni.New()
+	neg.Use(negroni.NewRecovery())
+	neg.Use(middleware.NewContext())
 
 	accHdl := &acc.Handler{
 		Context:    oauth2.NoContext,

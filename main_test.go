@@ -20,6 +20,7 @@ func TestWebserver(t *testing.T) {
 
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(rr.Body.String(), ShouldContainSubstring, "Hello")
+			So(rr.Header().Get("X-Request-ID"), ShouldNotBeEmpty)
 		})
 
 	})
