@@ -1,28 +1,67 @@
 package main
 
 import (
+	"flag"
 	"io"
 	"log"
 	"net/http"
+
+	"golang.org/x/oauth2"
 
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 
 	acc "github.com/alphand/skilltree-server/accounts"
+	ghoauth "golang.org/x/oauth2/github"
 )
 
-func helloFunc(rw http.ResponseWriter, req *http.Request) {
-	io.WriteString(rw, "Hello World! path: "+req.URL.Path)
+var (
+	port string
+
+	oauthGithubConf = &oauth2.Config{
+		ClientID:     "6a418b2d916f57eb921c",
+		ClientSecret: "35d7548d80049e6b4ac962e77f81e095330702b8",
+		Scopes:       []string{"user:email"},
+		Endpoint:     ghoauth.Endpoint,
+	}
+)
+
+func init() {
+	flag.StringVar(&port, "p", ":3000", "Webserver port address")
 }
 
 func main() {
-	route := mux.NewRouter()
-	route.HandleFunc("/", helloFunc)
-	route.HandleFunc("/accounts/github", acc.HandleGithubExchange).Methods("POST")
+	flag.Parse()
 
-	n := negroni.Classic()
-	n.UseHandler(route)
-	log.Print("Server is ready at :9090")
+	neg := SetupNegroni()
 
-	http.ListenAndServe(":9090", n)
+	server := &http.Server{
+		Addr:    port,
+		Handler: neg,
+	}
+
+	log.Println("Webserver is ready at: " + port)
+	log.Fatal(server.ListenAndServe())
+}
+
+// SetupNegroni - Setup server initialization for testing
+func SetupNegroni() *negroni.Negroni {
+	router := mux.NewRouter()
+
+	neg := negroni.Classic()
+
+	accHdl := &acc.Handler{
+		OAuthGHConf: oauthGithubConf,
+	}
+
+	router.HandleFunc("/", helloFunc)
+	router.HandleFunc("/accounts/github", accHdl.HandleGithubExchange).Methods("POST")
+
+	neg.UseHandler(router)
+
+	return neg
+}
+
+func helloFunc(rw http.ResponseWriter, req *http.Request) {
+	io.WriteString(rw, "Hello World! path: "+req.URL.Path)
 }

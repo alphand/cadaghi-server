@@ -27,8 +27,13 @@ type ghCode struct {
 	Code string
 }
 
+// Handler - Handle All Account Related
+type Handler struct {
+	OAuthGHConf *oauth2.Config
+}
+
 // HandleGithubExchange - exchagne github code to GH token
-func HandleGithubExchange(rw http.ResponseWriter, req *http.Request) {
+func (h *Handler) HandleGithubExchange(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 
 	var reqBody ghCode
@@ -40,7 +45,7 @@ func HandleGithubExchange(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	token, err := oauthGithubConf.Exchange(oauth2.NoContext, reqBody.Code)
+	token, err := h.OAuthGHConf.Exchange(oauth2.NoContext, reqBody.Code)
 	if err != nil {
 		fmt.Printf("github oauth exchange failed with %s", err)
 		j, _ := json.Marshal(err)
