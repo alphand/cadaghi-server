@@ -51,7 +51,7 @@ func SetupNegroni() *negroni.Negroni {
 
 	neg := negroni.New()
 	neg.Use(negroni.NewRecovery())
-	neg.Use(middleware.NewContext())
+	neg.Use(middleware.NewContext(&middleware.UUIDGen{}))
 
 	accHdl := &acc.Handler{
 		Context:    oauth2.NoContext,
