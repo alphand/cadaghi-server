@@ -22,10 +22,6 @@ func (f *fakeGen) New() interface {
 type concreteGen struct{}
 
 func (c *concreteGen) IDGenerator() string {
-	return c.test()
-}
-
-func (c *concreteGen) test() string {
 	return "abc123"
 }
 
@@ -33,19 +29,9 @@ func TestContext(t *testing.T) {
 	Convey("Context is setup", t, func() {
 		rr := httptest.NewRecorder()
 
-		// ctx := middleware.NewContext(&middleware.FakeGen{Content: "abc123"})
-
 		fgen := &fakeGen{}
 		congen := fgen.New()
-		// var _ middleware.IDGenerator = (*concreteGen)(nil)
 
-		// m, ok := interface{}(congen).(middleware.IDGenerator)
-
-		// gen := &fakeGen{
-		// 	Gen: congen,
-		// }
-
-		// log.Println("fakeme details: ", m, ok, gen.Gen.idGenerator())
 		ctx := middleware.NewContext(congen)
 		n := negroni.New()
 		n.Use(ctx)
