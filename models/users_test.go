@@ -2,6 +2,9 @@ package models_test
 
 import (
 	"testing"
+	"time"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/database"
 	"github.com/alphand/skilltree-server/models"
@@ -13,17 +16,20 @@ import (
 func TestUser(t *testing.T) {
 	Convey("Given DB is setup properly", t, func() {
 		sess, _ := db.NewSession("192.168.18.129")
-		dbStore := db.NewDB(sess, "testusers")
-		models.SetDBStore(dbStore)
+		dbStore := db.NewDataStore(sess, "testusers", "users")
+		models.InitUserDBStore(dbStore)
 
 		Convey("User can be created", func() {
+			timestamp := time.Now().Unix()
 			user := &models.User{
-				FirstName: fake.FirstName(),
-				LastName:  fake.LastName(),
-				Email:     fake.EmailAddress(),
+				ID:          bson.NewObjectId(),
+				FirstName:   fake.FirstName(),
+				LastName:    fake.LastName(),
+				Email:       fake.EmailAddress(),
+				CreatedDate: timestamp,
+				UpdatedDate: timestamp,
 			}
-
-			_, err := user.Create()
+			_, err := dbStore.Create(user)
 
 			So(user.ID, ShouldNotBeEmpty)
 			So(err, ShouldBeNil)
@@ -31,18 +37,20 @@ func TestUser(t *testing.T) {
 
 		Convey("User cannot have duplicate email", func() {
 			user1 := &models.User{
+				ID:        bson.NewObjectId(),
 				FirstName: fake.FirstName(),
 				LastName:  fake.LastName(),
 				Email:     fake.EmailAddress(),
 			}
-			user1.Create()
+			dbStore.Create(user1)
 
 			user2 := &models.User{
+				ID:        bson.NewObjectId(),
 				FirstName: fake.FirstName(),
 				LastName:  fake.LastName(),
 				Email:     user1.Email,
 			}
-			_, err := user2.Create()
+			_, err := dbStore.Create(user2)
 
 			So(user1.FirstName, ShouldNotEqual, user2.FirstName)
 			So(user1.Email, ShouldEqual, user2.Email)

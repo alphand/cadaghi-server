@@ -1,23 +1,14 @@
 package models
 
 import (
-	"time"
-
 	db "github.com/alphand/skilltree-server/database"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-const collName = "Users"
-
-var (
-	coll *mgo.Collection
-)
-
-//SetDBStore - set db session for accounts model
-func SetDBStore(dbStore *db.DataStore) {
-	coll = dbStore.Session.DB(dbStore.DBName).C(collName)
-	coll.EnsureIndex(mgo.Index{
+//InitUserDBStore - set db session for accounts model
+func InitUserDBStore(dbStore *db.DataStore) {
+	dbStore.C().EnsureIndex(mgo.Index{
 		Name:       "email_unqkey",
 		Key:        []string{"email"},
 		Unique:     true,
@@ -29,25 +20,11 @@ func SetDBStore(dbStore *db.DataStore) {
 
 // User - user model
 type User struct {
+	ds          *db.DataStore
 	ID          bson.ObjectId `json:"id" bson:"_id,omitempty"`
 	Email       string
 	FirstName   string
 	LastName    string
-	CreatedDate time.Time
-	UpdatedDate time.Time
-}
-
-//Create - create new user
-func (u *User) Create() (*User, error) {
-	timestamp := time.Now()
-	u.ID = bson.NewObjectId()
-	u.CreatedDate = timestamp
-	u.UpdatedDate = timestamp
-
-	err := coll.Insert(u)
-	if err != nil {
-		return nil, err
-	}
-
-	return u, nil
+	CreatedDate int64
+	UpdatedDate int64
 }

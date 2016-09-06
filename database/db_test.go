@@ -3,6 +3,8 @@ package db_test
 import (
 	"testing"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/alphand/skilltree-server/database"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -11,13 +13,51 @@ import (
 func TestDatabase(t *testing.T) {
 	Convey("Given database is ready for testing", t, func() {
 		sess, _ := db.NewSession("192.168.18.129")
-		defer sess.Close()
 
-		ds := db.NewDB(sess, "test")
+		ds := db.NewDataStore(sess, "test", "users")
 
 		Convey("DB is ready to be used", func() {
 			So(ds.Session, ShouldNotBeEmpty)
 			So(ds.DBName, ShouldEqual, "test")
+		})
+
+		Convey("DB can insert record", func() {
+			type recd struct {
+				ID   bson.ObjectId `bson:"_id,omitempty"`
+				Name string
+			}
+
+			rec := &recd{
+				ID:   bson.NewObjectId(),
+				Name: "James",
+			}
+
+			ds.Create(rec)
+
+			var res []recd
+			_ = ds.C().Find(bson.M{}).All(&res)
+
+			So(len(res), ShouldBeGreaterThanOrEqualTo, 1)
+		})
+
+		Convey("DB can dropdb", func() {
+			type recd struct {
+				ID   bson.ObjectId `bson:"_id,omitempty"`
+				Name string
+			}
+
+			rec := &recd{
+				ID:   bson.NewObjectId(),
+				Name: "James",
+			}
+
+			ds.Create(rec)
+
+			ds.DropDB()
+
+			names, _ := ds.Session.DatabaseNames()
+
+			So(len(names), ShouldEqual, 1)
 		})
 
 		// Convey("DB is dropped", func() {
@@ -41,6 +81,10 @@ func TestDatabase(t *testing.T) {
 
 		// 	So(len(dbFound), ShouldEqual, 1)
 		// })
+
+		Reset(func() {
+			sess.Close()
+		})
 
 	})
 }
