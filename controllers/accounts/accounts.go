@@ -20,6 +20,7 @@ type Handler struct {
 	OAuth2Conf *oauth2.Config
 }
 
+//Hello - hello method
 func (h *Handler) Hello() http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		rw.Header().Set("Content-Type", "plain/text")

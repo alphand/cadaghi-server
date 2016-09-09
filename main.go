@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/urfave/negroni"
 
-	acc "github.com/alphand/skilltree-server/accounts"
+	acc "github.com/alphand/skilltree-server/controllers/accounts"
 	"github.com/alphand/skilltree-server/middleware"
 	ghoauth "golang.org/x/oauth2/github"
 )

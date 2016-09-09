@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
-	acc "github.com/alphand/skilltree-server/accounts"
+	acc "github.com/alphand/skilltree-server/controllers/accounts"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
