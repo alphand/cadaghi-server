@@ -3,6 +3,9 @@ package middleware
 import (
 	"net/http"
 
+	mgo "gopkg.in/mgo.v2"
+
+	db "github.com/alphand/skilltree-server/database"
 	uuid "github.com/satori/go.uuid"
 
 	"golang.org/x/net/context"
@@ -11,6 +14,7 @@ import (
 type key int
 
 const reqIDKey key = 0
+const mongoConnKey key = 1
 
 var generator IDGenerator
 
@@ -29,7 +33,8 @@ func (u *UUIDGen) IDGenerator() string {
 
 // Context - is a middleware handle context creation to setup request ID, user id and DB
 type Context struct {
-	idgen IDGenerator
+	idgen        IDGenerator
+	mongoConnStr string
 }
 
 // IDGenerator - context id generator
@@ -45,6 +50,19 @@ func (c *Context) setupContextReqID(ctx context.Context, reqID string) context.C
 	return context.WithValue(ctx, reqIDKey, reqID)
 }
 
+func (c *Context) setupMongoConn(ctx context.Context, connStr string) context.Context {
+	sess, err := db.NewSession(connStr)
+	if err != nil {
+		panic(err)
+	}
+	return context.WithValue(ctx, mongoConnKey, sess)
+}
+
+//GetMongoConn - Get mongo session from context
+func (c *Context) GetMongoConn(ctx context.Context) *mgo.Session {
+	return ctx.Value(mongoConnKey).(*mgo.Session)
+}
+
 func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 	reqID := c.getRequestID(req)
 
@@ -53,14 +71,18 @@ func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http
 		rw.Header().Add("X-Request-ID", reqID)
 	}
 
-	ctx := c.setupContextReqID(req.Context(), reqID)
+	ctx := req.Context()
+
+	ctx = c.setupContextReqID(ctx, reqID)
+	ctx = c.setupMongoConn(ctx, c.mongoConnStr)
 	next(rw, req.WithContext(ctx))
 }
 
 // NewContext - create new middleware
-func NewContext(idGen IDGenerator) *Context {
+func NewContext(idGen IDGenerator, mongoConnStr string) *Context {
 	generator = idGen
 	return &Context{
-		idgen: generator,
+		idgen:        generator,
+		mongoConnStr: mongoConnStr,
 	}
 }

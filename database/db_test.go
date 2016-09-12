@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"log"
 	"testing"
 
 	"gopkg.in/mgo.v2/bson"
@@ -56,6 +57,7 @@ func TestDatabase(t *testing.T) {
 			ds.DropDB()
 
 			names, _ := ds.Session.DatabaseNames()
+			log.Println("dbnames: ", names)
 
 			So(len(names), ShouldEqual, 1)
 		})

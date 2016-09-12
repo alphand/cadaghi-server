@@ -1,9 +1,13 @@
 package middleware_test
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/middleware"
 	. "github.com/smartystreets/goconvey/convey"
@@ -32,7 +36,7 @@ func TestContext(t *testing.T) {
 		fgen := &fakeGen{}
 		congen := fgen.New()
 
-		ctx := middleware.NewContext(congen)
+		ctx := middleware.NewContext(congen, "192.168.18.129")
 		n := negroni.New()
 		n.Use(ctx)
 
@@ -47,6 +51,44 @@ func TestContext(t *testing.T) {
 
 			So(rr.Header().Get("X-Request-ID"), ShouldEqual, "abc123")
 		})
+
+		Convey("WebRequest is with mongo session", func() {
+			req, _ := http.NewRequest("GET", "/", nil)
+
+			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+				reqctx := req.Context()
+				mongoSess := ctx.GetMongoConn(reqctx)
+
+				newSess := mongoSess.Copy()
+				defer newSess.Close()
+
+				type person struct {
+					Name  string
+					Email string
+				}
+
+				newSess.DB("ctxtest").C("records").Insert(&person{
+					Name:  "niko",
+					Email: "niko@niko.com",
+				})
+
+				var findPerson person
+				newSess.DB("ctxtest").C("records").Find(bson.M{"name": "niko"}).One(&findPerson)
+
+				newSess.DB("ctxtest").DropDatabase()
+
+				j, _ := json.Marshal(findPerson)
+				rw.WriteHeader(http.StatusOK)
+				rw.Write(j)
+			}))
+
+			n.ServeHTTP(rr, req)
+
+			log.Println("body result", rr.Body.String())
+			So(rr.Body.String(), ShouldContainSubstring, "niko@niko.com")
+		})
+
+		Reset(func() {})
 
 	})
 }

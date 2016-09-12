@@ -67,7 +67,7 @@ func TestAccountHandler(t *testing.T) {
 			codejson := `{"code":"1234"}`
 
 			reader := strings.NewReader(codejson)
-			req, _ := http.NewRequest("POST", "/accounts/github", reader)
+			req, _ := http.NewRequest("POST", "/token/github", reader)
 
 			accHdl := &acc.Handler{
 				Context:    ctx,
@@ -81,6 +81,21 @@ func TestAccountHandler(t *testing.T) {
 
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(token.AccessToken, ShouldEqual, "popo")
+		})
+
+		Convey("Create new Account based on GH", func() {
+			regoJson := `{"email":"d@n.com", "token":"abc123", "firstName":"n", "lastName":"l"}`
+
+			reader := strings.NewReader(regoJson)
+			req, _ := http.NewRequest("POST", "/accounts/github", reader)
+
+			accHdl := &acc.Handler{
+				Context:    ctx,
+				OAuth2Conf: &oauth2.Config{},
+			}
+
+			accHdl.RegisterUser().ServeHTTP(rr, req)
+			So(rr, ShouldNotBeEmpty)
 		})
 
 	})

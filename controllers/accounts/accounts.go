@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/alphand/skilltree-server/models"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
@@ -52,5 +54,24 @@ func (h *Handler) HandleGithubExchange() http.HandlerFunc {
 
 		j, _ := json.Marshal(token)
 		rw.Write(j)
+	}
+}
+
+//RegisterUser - create new user registration
+func (h *Handler) RegisterUser() http.HandlerFunc {
+	return func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Content-Type", "application/json")
+
+		var reqBody models.User
+		decoder := json.NewDecoder(req.Body)
+		err := decoder.Decode(&reqBody)
+
+		if err != nil {
+			j, _ := json.Marshal(err)
+			rw.Write(j)
+			return
+		}
+
+		rw.WriteHeader(http.StatusOK)
 	}
 }
