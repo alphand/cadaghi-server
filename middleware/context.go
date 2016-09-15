@@ -58,11 +58,6 @@ func (c *Context) setupMongoConn(ctx context.Context, connStr string) context.Co
 	return context.WithValue(ctx, mongoConnKey, sess)
 }
 
-//GetMongoConn - Get mongo session from context
-func (c *Context) GetMongoConn(ctx context.Context) *mgo.Session {
-	return ctx.Value(mongoConnKey).(*mgo.Session)
-}
-
 func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 	reqID := c.getRequestID(req)
 
@@ -76,6 +71,8 @@ func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http
 	ctx = c.setupContextReqID(ctx, reqID)
 	ctx = c.setupMongoConn(ctx, c.mongoConnStr)
 	next(rw, req.WithContext(ctx))
+
+	defer GetMongoConn(ctx).Close()
 }
 
 // NewContext - create new middleware
@@ -85,4 +82,9 @@ func NewContext(idGen IDGenerator, mongoConnStr string) *Context {
 		idgen:        generator,
 		mongoConnStr: mongoConnStr,
 	}
+}
+
+//GetMongoConn - Get mongo session from context
+func GetMongoConn(ctx context.Context) *mgo.Session {
+	return ctx.Value(mongoConnKey).(*mgo.Session)
 }

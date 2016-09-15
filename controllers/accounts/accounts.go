@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/alphand/skilltree-server/database"
+	"github.com/alphand/skilltree-server/middleware"
 	"github.com/alphand/skilltree-server/models"
 
 	"golang.org/x/net/context"
@@ -72,6 +74,21 @@ func (h *Handler) RegisterUser() http.HandlerFunc {
 			return
 		}
 
+		ctx := req.Context()
+		mgoSess := middleware.GetMongoConn(ctx)
+
+		dbStore := db.NewDataStore(mgoSess, "skilltree-db", "users")
+		models.InitUserDBStore(dbStore)
+
+		inst, err2 := dbStore.Create(reqBody)
+
+		if err2 != nil {
+			errJSON, _ := json.Marshal(err2)
+			rw.Write(errJSON)
+		}
+
+		resp, _ := json.Marshal(inst.(models.User))
 		rw.WriteHeader(http.StatusOK)
+		rw.Write(resp)
 	}
 }
