@@ -3,6 +3,7 @@ package accounts_test
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -95,6 +96,7 @@ func TestAccountHandler(t *testing.T) {
 			}
 
 			accHdl.RegisterUser().ServeHTTP(rr, req)
+			log.Println(rr.Body.String())
 			So(rr, ShouldNotBeEmpty)
 		})
 

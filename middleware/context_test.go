@@ -57,7 +57,7 @@ func TestContext(t *testing.T) {
 
 			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				reqctx := req.Context()
-				mongoSess := ctx.GetMongoConn(reqctx)
+				mongoSess := middleware.GetMongoConn(reqctx)
 
 				newSess := mongoSess.Copy()
 				defer newSess.Close()

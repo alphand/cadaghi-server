@@ -18,12 +18,13 @@ func TestUserIntegration(t *testing.T) {
 		sess, _ := db.NewSession("192.168.18.129")
 		userStore := db.NewDataStore(sess, "testusers", "users")
 		userIntegrationStore := db.NewDataStore(sess, "testusers", "userintegrations")
+
 		models.InitUserDBStore(userStore)
 		models.InitUserIntegrationDBStore(userIntegrationStore)
 
 		user := fixtures.NewUser()
 
-		userStore.Create(user)
+		userStore.Create(user.ID, user)
 
 		Convey("User can be integrated", func() {
 			timestamp := time.Now().Unix()
@@ -37,7 +38,7 @@ func TestUserIntegration(t *testing.T) {
 				UpdatedDate: timestamp,
 			}
 
-			_, err := userIntegrationStore.Create(ghintegration)
+			_, err := userIntegrationStore.Create(ghintegration.ID, ghintegration)
 
 			So(ghintegration.ID, ShouldNotBeEmpty)
 			So(err, ShouldBeNil)
@@ -45,17 +46,17 @@ func TestUserIntegration(t *testing.T) {
 
 		Convey("User cannot have duplicate integration", func() {
 			intg1 := fixtures.NewIntegration(user, "github")
-			userIntegrationStore.Create(intg1)
+			userIntegrationStore.Create(intg1.ID, intg1)
 
 			intg2 := fixtures.NewIntegration(user, "github")
-			_, err := userIntegrationStore.Create(intg2)
+			_, err := userIntegrationStore.Create(intg2.ID, intg2)
 
 			So(err, ShouldNotBeNil)
 		})
 
 		Reset(func() {
-			userStore.DropDB()
-			userIntegrationStore.DropDB()
+			sess.DB(userStore.DBName).DropDatabase()
+			sess.DB(userIntegrationStore.DBName).DropDatabase()
 			sess.Close()
 		})
 	})

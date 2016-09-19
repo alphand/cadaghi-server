@@ -7,8 +7,8 @@ import (
 )
 
 //InitUserIntegrationDBStore - set db session for accounts model
-func InitUserIntegrationDBStore(dbStore *db.DataStore) {
-	dbStore.C().EnsureIndex(mgo.Index{
+func InitUserIntegrationDBStore(d db.IDataStore) {
+	d.Coll().EnsureIndex(mgo.Index{
 		Name:       "idx_user_provider",
 		Key:        []string{"userid", "provider"},
 		Unique:     true,
