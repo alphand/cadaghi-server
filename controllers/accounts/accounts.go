@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"gopkg.in/mgo.v2/bson"
+
 	"github.com/alphand/skilltree-server/database"
 	"github.com/alphand/skilltree-server/middleware"
 	"github.com/alphand/skilltree-server/models"
@@ -80,7 +82,8 @@ func (h *Handler) RegisterUser() http.HandlerFunc {
 		dbStore := db.NewDataStore(mgoSess, "skilltree-db", "users")
 		models.InitUserDBStore(dbStore)
 
-		inst, err2 := dbStore.Create(reqBody)
+		reqBody.ID = bson.NewObjectId()
+		inst, err2 := dbStore.Create(reqBody.ID, reqBody)
 
 		if err2 != nil {
 			errJSON, _ := json.Marshal(err2)
