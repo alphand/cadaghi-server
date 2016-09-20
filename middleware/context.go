@@ -3,18 +3,17 @@ package middleware
 import (
 	"net/http"
 
-	mgo "gopkg.in/mgo.v2"
-
 	db "github.com/alphand/skilltree-server/database"
 	uuid "github.com/satori/go.uuid"
 
 	"golang.org/x/net/context"
 )
 
-type key int
+// Key - key for context
+type Key int
 
-const reqIDKey key = 0
-const mongoConnKey key = 1
+const reqIDKey Key = 0
+const mongoConnKey Key = 1
 
 var generator IDGenerator
 
@@ -51,7 +50,8 @@ func (c *Context) setupContextReqID(ctx context.Context, reqID string) context.C
 }
 
 func (c *Context) setupMongoConn(ctx context.Context, connStr string) context.Context {
-	sess, err := db.NewSession(connStr)
+	dbi := db.DBInvoker{}
+	sess, err := dbi.NewSession(connStr)
 	if err != nil {
 		panic(err)
 	}
@@ -85,6 +85,11 @@ func NewContext(idGen IDGenerator, mongoConnStr string) *Context {
 }
 
 //GetMongoConn - Get mongo session from context
-func GetMongoConn(ctx context.Context) *mgo.Session {
-	return ctx.Value(mongoConnKey).(*mgo.Session)
+func GetMongoConn(ctx context.Context) db.IMongoSess {
+	return ctx.Value(mongoConnKey).(db.IMongoSess)
+}
+
+// GetMongoConnKey - mongo conn key
+func GetMongoConnKey() Key {
+	return mongoConnKey
 }

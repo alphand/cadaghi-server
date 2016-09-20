@@ -16,9 +16,9 @@ import (
 func TestUser(t *testing.T) {
 
 	Convey("Given User creation should be validated", t, func() {
-
-		sess, _ := db.NewSession("192.168.18.129")
-		dbStore := db.NewDataStore(sess, "testusers", "users")
+		dbi := db.DBInvoker{}
+		sess, _ := dbi.NewSession("192.168.18.129")
+		dbStore := dbi.NewDataStore(sess, "testusers", "users")
 		models.InitUserDBStore(dbStore)
 
 		Convey("User can be created", func() {

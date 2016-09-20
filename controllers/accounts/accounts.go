@@ -24,6 +24,7 @@ type ghCode struct {
 type Handler struct {
 	Context    context.Context
 	OAuth2Conf *oauth2.Config
+	dbi        db.DBInvoker
 }
 
 //Hello - hello method
@@ -79,7 +80,7 @@ func (h *Handler) RegisterUser() http.HandlerFunc {
 		ctx := req.Context()
 		mgoSess := middleware.GetMongoConn(ctx)
 
-		dbStore := db.NewDataStore(mgoSess, "skilltree-db", "users")
+		dbStore := h.dbi.NewDataStore(mgoSess, "skilltree-db", "users")
 		models.InitUserDBStore(dbStore)
 
 		reqBody.ID = bson.NewObjectId()

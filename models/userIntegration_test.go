@@ -15,9 +15,10 @@ import (
 
 func TestUserIntegration(t *testing.T) {
 	Convey("Given DB is setup properly", t, func() {
-		sess, _ := db.NewSession("192.168.18.129")
-		userStore := db.NewDataStore(sess, "testusers", "users")
-		userIntegrationStore := db.NewDataStore(sess, "testusers", "userintegrations")
+		dbi := db.DBInvoker{}
+		sess, _ := dbi.NewSession("192.168.18.129")
+		userStore := dbi.NewDataStore(sess, "testusers", "users")
+		userIntegrationStore := dbi.NewDataStore(sess, "testusers", "userintegrations")
 
 		models.InitUserDBStore(userStore)
 		models.InitUserIntegrationDBStore(userIntegrationStore)

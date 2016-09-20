@@ -9,10 +9,15 @@ import (
 	"strings"
 	"testing"
 
+	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
+
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	acc "github.com/alphand/skilltree-server/controllers/accounts"
+	db "github.com/alphand/skilltree-server/database"
+	md "github.com/alphand/skilltree-server/middleware"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -25,12 +30,6 @@ type mockTransport struct {
 	Response string
 }
 
-func newMockTransport(jsonResp string) http.RoundTripper {
-	return &mockTransport{
-		Response: jsonResp,
-	}
-}
-
 func (t *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp := &http.Response{
 		Header:     make(http.Header),
@@ -41,6 +40,42 @@ func (t *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp.Body = ioutil.NopCloser(strings.NewReader(t.Response))
 
 	return resp, nil
+}
+
+func newMockTransport(jsonResp string) http.RoundTripper {
+	return &mockTransport{
+		Response: jsonResp,
+	}
+}
+
+type mockDS struct {
+}
+
+func (m *mockDS) Coll() *mgo.Collection {
+	return &mgo.Collection{}
+}
+func (m *mockDS) Create(id bson.ObjectId, v interface{}) (interface{}, error) {
+	return v, nil
+}
+
+type mockDBI struct {
+}
+
+func (m *mockDBI) NewDataStore() db.IDataStore {
+	return &mockDS{}
+}
+
+type mockMGOSess struct {
+}
+
+func (m *mockMGOSess) DB(name string) *mgo.Database {
+	return &mgo.Database{}
+}
+func (m *mockMGOSess) Close() {
+
+}
+func (m *mockMGOSess) Copy() *mgo.Session {
+	return &mgo.Session{}
 }
 
 func TestAccountHandler(t *testing.T) {
@@ -58,7 +93,6 @@ func TestAccountHandler(t *testing.T) {
 
 		Convey("Webserver responding to HELLO", func() {
 			req, _ := http.NewRequest("GET", "/", nil)
-
 			accHdl.Hello().ServeHTTP(rr, req)
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(rr.Body.String(), ShouldContainSubstring, "Hello")
@@ -89,6 +123,11 @@ func TestAccountHandler(t *testing.T) {
 
 			reader := strings.NewReader(regoJson)
 			req, _ := http.NewRequest("POST", "/accounts/github", reader)
+
+			reqctx := context.Background()
+			reqctx = context.WithValue(reqctx, md.GetMongoConnKey(), &mockMGOSess{})
+
+			req = req.WithContext(reqctx)
 
 			accHdl := &acc.Handler{
 				Context:    ctx,

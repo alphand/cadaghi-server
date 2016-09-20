@@ -12,9 +12,11 @@ import (
 
 func TestDatabase(t *testing.T) {
 	Convey("Given database is ready for testing", t, func() {
-		sess, _ := db.NewSession("192.168.18.129")
+		dbs := db.DBInvoker{}
 
-		ds := db.NewDataStore(sess, "test", "users")
+		sess, _ := dbs.NewSession("192.168.18.129")
+
+		ds := dbs.NewDataStore(sess, "test", "users")
 
 		Convey("DB is ready to be used", func() {
 			So(ds.Coll(), ShouldNotBeNil)
