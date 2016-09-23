@@ -23,15 +23,18 @@ func (m *MongoDS) Create(i interface{}) (err error) {
 //GetByID - Mongo get record by ID
 func (m *MongoDS) GetByID(id string) (o interface{}, err error) {
 	m.execMgoAction(func(c *mgo.Collection) {
-		err = c.FindId(id).One(o)
+		err = c.FindId(bson.ObjectIdHex(id)).One(&o)
 	})
 	return
 }
 
 //GetAll - Mongo get all record
-func (m *MongoDS) GetAll(i interface{}, o []interface{}) (err error) {
+func (m *MongoDS) GetAll(i interface{}) (o []interface{}, err error) {
 	m.execMgoAction(func(c *mgo.Collection) {
-		err = c.Find(bson.M{}).All(&o)
+		if i == nil {
+			i = &bson.M{}
+		}
+		err = c.Find(i).All(&o)
 	})
 	return
 }
@@ -61,7 +64,7 @@ func initMongo(connStr string) (*MongoDS, error) {
 		return nil, err
 	}
 
-	mongsess.SetMode(mgo.Monotonic, true)
+	// mongsess.SetMode(mgo.Monotonic, true)
 	m := &MongoDS{
 		session: mongsess,
 	}

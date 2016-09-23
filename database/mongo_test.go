@@ -1,16 +1,21 @@
 package db_test
 
 import (
-	"log"
 	"testing"
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/database"
+	"github.com/icrowley/fake"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+type recd struct {
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	Name string
+}
 
 func TestDatabase(t *testing.T) {
 	Convey("Given mongo database is ready for testing", t, func() {
@@ -22,11 +27,7 @@ func TestDatabase(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 
-		Convey("DB can insert record", func() {
-			type recd struct {
-				ID   bson.ObjectId `bson:"_id,omitempty"`
-				Name string
-			}
+		Convey("DB can insert & retrieve a record", func() {
 
 			rec := &recd{
 				ID:   bson.NewObjectId(),
@@ -35,20 +36,48 @@ func TestDatabase(t *testing.T) {
 
 			err2 := mgodb.Create(rec)
 
-			// var res []recd
-			res := make([]recd, 0)
-			mgodb.GetAll(bson.M{}, res)
+			var r recd
+			o, _ := mgodb.GetByID(rec.ID.Hex())
 
-			log.Println("res", res)
+			v, _ := bson.Marshal(o)
+			bson.Unmarshal(v, &r)
 
 			So(err2, ShouldBeNil)
-			// So(len(res), ShouldBeGreaterThanOrEqualTo, 1)
+			So(r.Name, ShouldEqual, "James")
+			So(r.ID.Hex(), ShouldEqual, rec.ID.Hex())
+		})
+
+		Convey("DB can return multiple rows", func() {
+			rec1 := &recd{
+				ID:   bson.NewObjectId(),
+				Name: fake.FirstName(),
+			}
+
+			rec2 := &recd{
+				ID:   bson.NewObjectId(),
+				Name: fake.FirstName(),
+			}
+
+			errIns := mgodb.Create(rec1)
+			errIns = mgodb.Create(rec2)
+
+			o, _ := mgodb.GetAll(nil)
+
+			var res []recd
+			for _, dt := range o {
+				v, _ := bson.Marshal(dt)
+				var sgl recd
+				bson.Unmarshal(v, &sgl)
+				res = append(res, sgl)
+			}
+
+			So(errIns, ShouldBeNil)
+			So(len(res), ShouldEqual, 2)
 		})
 
 		Reset(func() {
 			sess, _ := mgo.Dial(connStr)
 			defer sess.Close()
-
 			sess.DB(dbName).DropDatabase()
 		})
 
