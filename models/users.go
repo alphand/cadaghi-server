@@ -8,7 +8,7 @@ import (
 
 //InitUserDBStore - set db session for accounts model
 func InitUserDBStore(ds db.IDataStore) {
-	ds.Coll().EnsureIndex(mgo.Index{
+	ds.SetIndex(mgo.Index{
 		Name:       "email_unqkey",
 		Key:        []string{"email"},
 		Unique:     true,

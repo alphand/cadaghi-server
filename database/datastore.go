@@ -7,4 +7,6 @@ type IDataStore interface {
 	GetAll(interface{}) ([]interface{}, error)
 	// Put(id string) (interface{}, error)
 	// Delete(id string, soft bool)
+
+	SetIndex(interface{}) error
 }

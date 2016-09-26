@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	db "github.com/alphand/skilltree-server/database"
@@ -16,10 +17,8 @@ import (
 func TestUser(t *testing.T) {
 
 	Convey("Given User creation should be validated", t, func() {
-		dbi := db.DBInvoker{}
-		sess, _ := dbi.NewSession("192.168.18.129")
-		dbStore := dbi.NewDataStore(sess, "testusers", "users")
-		models.InitUserDBStore(dbStore)
+		ds, _ := db.NewMongoStore(connStr, dbName, "users")
+		models.InitUserDBStore(ds)
 
 		Convey("User can be created", func() {
 			timestamp := time.Now().Unix()
@@ -32,9 +31,8 @@ func TestUser(t *testing.T) {
 				UpdatedDate: timestamp,
 			}
 
-			_, err := dbStore.Create(user.ID, user)
+			err := ds.Create(user)
 
-			So(user.ID, ShouldNotBeEmpty)
 			So(user.ID, ShouldNotBeEmpty)
 			So(err, ShouldBeNil)
 		})
@@ -46,7 +44,7 @@ func TestUser(t *testing.T) {
 				LastName:  fake.LastName(),
 				Email:     fake.EmailAddress(),
 			}
-			dbStore.Create(user1.ID, user1)
+			ds.Create(user1)
 
 			user2 := &models.User{
 				ID:        bson.NewObjectId(),
@@ -54,7 +52,7 @@ func TestUser(t *testing.T) {
 				LastName:  fake.LastName(),
 				Email:     user1.Email,
 			}
-			_, err := dbStore.Create(user2.ID, user2)
+			err := ds.Create(user2)
 
 			So(user1.FirstName, ShouldNotEqual, user2.FirstName)
 			So(user1.Email, ShouldEqual, user2.Email)
@@ -62,7 +60,9 @@ func TestUser(t *testing.T) {
 		})
 
 		Reset(func() {
-			sess.DB(dbStore.DBName).DropDatabase()
+			sess, _ := mgo.Dial(connStr)
+			defer sess.Close()
+			sess.DB(dbName).DropDatabase()
 		})
 	})
 }

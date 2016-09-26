@@ -33,6 +33,10 @@ func (m *mockDS) GetAll(q interface{}) ([]interface{}, error) {
 	return nil, nil
 }
 
+func (m *mockDS) SetIndex(q interface{}) error {
+	return nil
+}
+
 func TestDataStoreMiddleware(t *testing.T) {
 	Convey("Given can create datastore middleware", t, func() {
 		rr := httptest.NewRecorder()

@@ -39,6 +39,14 @@ func (m *MongoDS) GetAll(i interface{}) (o []interface{}, err error) {
 	return
 }
 
+//SetIndex - set index for collection
+func (m *MongoDS) SetIndex(i interface{}) (err error) {
+	m.execMgoAction(func(c *mgo.Collection) {
+		err = c.EnsureIndex(i.(mgo.Index))
+	})
+	return
+}
+
 func (m *MongoDS) execMgoAction(f mgoAction) {
 	sess := m.session.Clone()
 	defer sess.Close()
@@ -64,7 +72,7 @@ func initMongo(connStr string) (*MongoDS, error) {
 		return nil, err
 	}
 
-	// mongsess.SetMode(mgo.Monotonic, true)
+	mongsess.SetMode(mgo.Monotonic, true)
 	m := &MongoDS{
 		session: mongsess,
 	}
