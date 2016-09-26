@@ -1,95 +1,66 @@
 package middleware
 
-import (
-	"net/http"
-
-	db "github.com/alphand/skilltree-server/database"
-	uuid "github.com/satori/go.uuid"
-
-	"golang.org/x/net/context"
-)
-
 // Key - key for context
 type Key int
 
 const reqIDKey Key = 0
-const mongoConnKey Key = 1
+const iDataStoreKey Key = 1
 
-var generator IDGenerator
-
-// IDGenerator - interface to specify generator type
-type IDGenerator interface {
-	IDGenerator() string
+// GetReqIDKey - Retreive RequestID Context Key
+func GetReqIDKey() Key {
+	return reqIDKey
 }
 
-//UUIDGen - UUID Generator for context request id
-type UUIDGen struct{}
-
-// IDGenerator - uuid generator string
-func (u *UUIDGen) IDGenerator() string {
-	return uuid.NewV4().String()
+// GetIDataStoreKey - Retreive IDataStore Context Key
+func GetIDataStoreKey() Key {
+	return iDataStoreKey
 }
 
-// Context - is a middleware handle context creation to setup request ID, user id and DB
-type Context struct {
-	idgen        IDGenerator
-	mongoConnStr string
-}
+// var generator IDGenerator
 
-// IDGenerator - context id generator
-func (c *Context) IDGenerator() string {
-	return c.idgen.IDGenerator()
-}
+// // Context - is a middleware handle context creation to setup request ID, user id and DB
+// type Context struct {
+// 	idgen     IDGenerator
+// 	datastore db.IDataStore
+// }
 
-func (c *Context) getRequestID(req *http.Request) string {
-	return req.Header.Get("X-Request-ID")
-}
+// // IDGenerator - context id generator
+// func (c *Context) IDGenerator() string {
+// 	return c.idgen.IDGenerator()
+// }
 
-func (c *Context) setupContextReqID(ctx context.Context, reqID string) context.Context {
-	return context.WithValue(ctx, reqIDKey, reqID)
-}
+// func (c *Context) getRequestID(req *http.Request) string {
+// 	return req.Header.Get("X-Request-ID")
+// }
 
-func (c *Context) setupMongoConn(ctx context.Context, connStr string) context.Context {
-	dbi := db.DBInvoker{}
-	sess, err := dbi.NewSession(connStr)
-	if err != nil {
-		panic(err)
-	}
-	return context.WithValue(ctx, mongoConnKey, sess)
-}
+// func (c *Context) setupContextReqID(ctx context.Context, reqID string) context.Context {
+// 	return context.WithValue(ctx, reqIDKey, reqID)
+// }
 
-func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	reqID := c.getRequestID(req)
+// func (c *Context) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+// 	reqID := c.getRequestID(req)
 
-	if reqID == "" {
-		reqID = c.IDGenerator()
-		rw.Header().Add("X-Request-ID", reqID)
-	}
+// 	if reqID == "" {
+// 		reqID = c.IDGenerator()
+// 		rw.Header().Add("X-Request-ID", reqID)
+// 	}
 
-	ctx := req.Context()
+// 	ctx := req.Context()
+// 	ctx = c.setupContextReqID(ctx, reqID)
 
-	ctx = c.setupContextReqID(ctx, reqID)
-	ctx = c.setupMongoConn(ctx, c.mongoConnStr)
-	next(rw, req.WithContext(ctx))
+// 	next(rw, req.WithContext(ctx))
+// }
 
-	defer GetMongoConn(ctx).Close()
-}
+// // NewContextHandler - create new middleware
+// func NewContextHandler(idGen IDGenerator, ds db.IDataStore) *Context {
+// 	generator = idGen
+// 	return &Context{
+// 		idgen:     generator,
+// 		datastore: ds,
+// 	}
+// }
 
-// NewContext - create new middleware
-func NewContext(idGen IDGenerator, mongoConnStr string) *Context {
-	generator = idGen
-	return &Context{
-		idgen:        generator,
-		mongoConnStr: mongoConnStr,
-	}
-}
-
-//GetMongoConn - Get mongo session from context
-func GetMongoConn(ctx context.Context) db.IMongoSess {
-	return ctx.Value(mongoConnKey).(db.IMongoSess)
-}
-
-// GetMongoConnKey - mongo conn key
-func GetMongoConnKey() Key {
-	return mongoConnKey
-}
+// //GetDatastore - Get mongo session from context
+// func GetDatastore(ctx context.Context) db.IDataStore {
+// 	return ctx.Value(mongoConnKey).(db.IDataStore)
+// }

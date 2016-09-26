@@ -1,94 +1,75 @@
 package middleware_test
 
-import (
-	"encoding/json"
-	"log"
-	"net/http"
-	"net/http/httptest"
-	"testing"
+// import (
+// 	"encoding/json"
+// 	"log"
+// 	"net/http"
+// 	"net/http/httptest"
+// 	"testing"
 
-	"gopkg.in/mgo.v2/bson"
+// 	"github.com/alphand/skilltree-server/middleware"
+// 	. "github.com/smartystreets/goconvey/convey"
+// 	"github.com/urfave/negroni"
+// )
 
-	"github.com/alphand/skilltree-server/middleware"
-	. "github.com/smartystreets/goconvey/convey"
-	"github.com/urfave/negroni"
-)
+// type fakeGen struct {
+// }
 
-type fakeGen struct {
-}
+// func (f *fakeGen) New() interface {
+// 	IDGenerator() string
+// } {
+// 	return &concreteGen{}
+// }
 
-func (f *fakeGen) New() interface {
-	IDGenerator() string
-} {
-	return &concreteGen{}
-}
+// type concreteGen struct{}
 
-type concreteGen struct{}
+// func (c *concreteGen) IDGenerator() string {
+// 	return "abc123"
+// }
 
-func (c *concreteGen) IDGenerator() string {
-	return "abc123"
-}
+// func TestContext(t *testing.T) {
+// 	Convey("Context is setup", t, func() {
+// 		rr := httptest.NewRecorder()
 
-func TestContext(t *testing.T) {
-	Convey("Context is setup", t, func() {
-		rr := httptest.NewRecorder()
+// 		ctx := middleware.NewContextHandler(congen)
+// 		n := negroni.New()
+// 		n.Use(ctx)
 
-		fgen := &fakeGen{}
-		congen := fgen.New()
+// 		Convey("WebRequest is contexted properly", func() {
+// 			req, _ := http.NewRequest("GET", "/", nil)
 
-		ctx := middleware.NewContext(congen, "192.168.18.129")
-		n := negroni.New()
-		n.Use(ctx)
+// 			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+// 				rw.WriteHeader(http.StatusOK)
+// 			}))
 
-		Convey("WebRequest is contexted properly", func() {
-			req, _ := http.NewRequest("GET", "/", nil)
+// 			n.ServeHTTP(rr, req)
 
-			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				rw.WriteHeader(http.StatusOK)
-			}))
+// 			So(rr.Header().Get("X-Request-ID"), ShouldEqual, "abc123")
+// 		})
 
-			n.ServeHTTP(rr, req)
+// 		Convey("WebRequest is with mongo session", func() {
+// 			req, _ := http.NewRequest("GET", "/", nil)
 
-			So(rr.Header().Get("X-Request-ID"), ShouldEqual, "abc123")
-		})
+// 			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+// 				reqctx := req.Context()
 
-		Convey("WebRequest is with mongo session", func() {
-			req, _ := http.NewRequest("GET", "/", nil)
+// 				type person struct {
+// 					Name  string
+// 					Email string
+// 				}
 
-			n.UseHandler(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				reqctx := req.Context()
-				mongoSess := middleware.GetMongoConn(reqctx)
+// 				j, _ := json.Marshal(findPerson)
+// 				rw.WriteHeader(http.StatusOK)
+// 				rw.Write(j)
+// 			}))
 
-				newSess := mongoSess.Copy()
-				defer newSess.Close()
+// 			n.ServeHTTP(rr, req)
 
-				type person struct {
-					Name  string
-					Email string
-				}
+// 			log.Println("body result", rr.Body.String())
+// 			So(rr.Body.String(), ShouldContainSubstring, "niko@niko.com")
+// 		})
 
-				newSess.DB("ctxtest").C("records").Insert(&person{
-					Name:  "niko",
-					Email: "niko@niko.com",
-				})
+// 		Reset(func() {})
 
-				var findPerson person
-				newSess.DB("ctxtest").C("records").Find(bson.M{"name": "niko"}).One(&findPerson)
-
-				newSess.DB("ctxtest").DropDatabase()
-
-				j, _ := json.Marshal(findPerson)
-				rw.WriteHeader(http.StatusOK)
-				rw.Write(j)
-			}))
-
-			n.ServeHTTP(rr, req)
-
-			log.Println("body result", rr.Body.String())
-			So(rr.Body.String(), ShouldContainSubstring, "niko@niko.com")
-		})
-
-		Reset(func() {})
-
-	})
-}
+// 	})
+// }
