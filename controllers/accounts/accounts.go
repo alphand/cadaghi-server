@@ -9,7 +9,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/database"
-	"github.com/alphand/skilltree-server/middleware"
 	"github.com/alphand/skilltree-server/models"
 
 	"golang.org/x/net/context"
@@ -24,7 +23,7 @@ type ghCode struct {
 type Handler struct {
 	Context    context.Context
 	OAuth2Conf *oauth2.Config
-	ds         db.IDataStore
+	UserDS     db.IDataStore
 }
 
 //Hello - hello method
@@ -77,21 +76,16 @@ func (h *Handler) RegisterUser() http.HandlerFunc {
 			return
 		}
 
-		ctx := req.Context()
-		mgoSess := middleware.GetDSFromCtx(ctx)
-
-		dbStore := h.dbi.NewDataStore(mgoSess, "skilltree-db", "users")
-		models.InitUserDBStore(dbStore)
-
 		reqBody.ID = bson.NewObjectId()
-		inst, err2 := dbStore.Create(reqBody.ID, reqBody)
+		err = h.UserDS.Create(reqBody)
 
-		if err2 != nil {
-			errJSON, _ := json.Marshal(err2)
+		if err != nil {
+			errJSON, _ := json.Marshal(err)
 			rw.Write(errJSON)
+			return
 		}
 
-		resp, _ := json.Marshal(inst.(models.User))
+		resp, _ := json.Marshal(reqBody)
 		rw.WriteHeader(http.StatusOK)
 		rw.Write(resp)
 	}

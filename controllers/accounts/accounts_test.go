@@ -2,8 +2,8 @@ package accounts_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,9 +17,14 @@ import (
 
 	acc "github.com/alphand/skilltree-server/controllers/accounts"
 	db "github.com/alphand/skilltree-server/database"
-	md "github.com/alphand/skilltree-server/middleware"
+	"github.com/icrowley/fake"
 
 	. "github.com/smartystreets/goconvey/convey"
+)
+
+const (
+	connStr = "192.168.18.129"
+	dbName  = "testapp"
 )
 
 var (
@@ -56,26 +61,6 @@ func (m *mockDS) Coll() *mgo.Collection {
 }
 func (m *mockDS) Create(id bson.ObjectId, v interface{}) (interface{}, error) {
 	return v, nil
-}
-
-type mockDBI struct {
-}
-
-func (m *mockDBI) NewDataStore() db.IDataStore {
-	return &mockDS{}
-}
-
-type mockMGOSess struct {
-}
-
-func (m *mockMGOSess) DB(name string) *mgo.Database {
-	return &mgo.Database{}
-}
-func (m *mockMGOSess) Close() {
-
-}
-func (m *mockMGOSess) Copy() *mgo.Session {
-	return &mgo.Session{}
 }
 
 func TestAccountHandler(t *testing.T) {
@@ -119,24 +104,31 @@ func TestAccountHandler(t *testing.T) {
 		})
 
 		Convey("Create new Account based on GH", func() {
-			regoJson := `{"email":"d@n.com", "token":"abc123", "firstName":"n", "lastName":"l"}`
+			email := fake.EmailAddress()
+			regoJson := fmt.Sprintf(
+				`{"email":"%s", "token":"%s", "firstName":"%s", "lastName":"%s"}`,
+				email,
+				fake.SimplePassword(),
+				fake.FirstName(),
+				fake.LastName(),
+			)
 
 			reader := strings.NewReader(regoJson)
 			req, _ := http.NewRequest("POST", "/accounts/github", reader)
 
-			reqctx := context.Background()
-			reqctx = context.WithValue(reqctx, md.GetMongoConnKey(), &mockMGOSess{})
-
-			req = req.WithContext(reqctx)
+			mongsess := db.InitMongoSession(connStr)
+			dbStore, err := db.NewMongoStore(mongsess, dbName, "Users")
 
 			accHdl := &acc.Handler{
 				Context:    ctx,
 				OAuth2Conf: &oauth2.Config{},
+				UserDS:     dbStore,
 			}
 
 			accHdl.RegisterUser().ServeHTTP(rr, req)
-			log.Println(rr.Body.String())
-			So(rr, ShouldNotBeEmpty)
+
+			So(err, ShouldBeNil)
+			So(rr.Body.String(), ShouldContainSubstring, email)
 		})
 
 	})
