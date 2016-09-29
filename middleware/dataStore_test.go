@@ -41,7 +41,8 @@ func TestDataStoreMiddleware(t *testing.T) {
 	Convey("Given can create datastore middleware", t, func() {
 		rr := httptest.NewRecorder()
 		mds := &mockDS{}
-		dsmw := middleware.NewDataStoreMW(mds)
+
+		dsmw := middleware.NewDataStoreMW(mds, nil)
 
 		n := negroni.New()
 		n.Use(dsmw)
@@ -64,7 +65,6 @@ func TestDataStoreMiddleware(t *testing.T) {
 			n.ServeHTTP(rr, req)
 
 			So(rr.Body.String(), ShouldEqual, name+" "+email)
-
 		})
 	})
 }

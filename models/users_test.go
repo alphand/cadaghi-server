@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	db "github.com/alphand/skilltree-server/database"
@@ -17,7 +16,8 @@ import (
 func TestUser(t *testing.T) {
 
 	Convey("Given User creation should be validated", t, func() {
-		ds, _ := db.NewMongoStore(connStr, dbName, "users")
+		sess := db.InitMongoSession(connStr)
+		ds, _ := db.NewMongoStore(sess, dbName, "users")
 		models.InitUserDBStore(ds)
 
 		Convey("User can be created", func() {
@@ -60,7 +60,6 @@ func TestUser(t *testing.T) {
 		})
 
 		Reset(func() {
-			sess, _ := mgo.Dial(connStr)
 			defer sess.Close()
 			sess.DB(dbName).DropDatabase()
 		})

@@ -3,7 +3,6 @@ package db_test
 import (
 	"testing"
 
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/database"
@@ -21,7 +20,8 @@ func TestDatabase(t *testing.T) {
 	Convey("Given mongo database is ready for testing", t, func() {
 		connStr := "192.168.18.129"
 		dbName := "test"
-		mgodb, err := db.NewMongoStore(connStr, dbName, "users")
+		mgosess := db.InitMongoSession(connStr)
+		mgodb, err := db.NewMongoStore(mgosess, dbName, "users")
 
 		Convey("DB is ready to be used", func() {
 			So(err, ShouldBeNil)
@@ -76,7 +76,7 @@ func TestDatabase(t *testing.T) {
 		})
 
 		Reset(func() {
-			sess, _ := mgo.Dial(connStr)
+			sess := mgosess.Clone()
 			defer sess.Close()
 			sess.DB(dbName).DropDatabase()
 		})

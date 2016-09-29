@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/alphand/skilltree-server/database"
@@ -21,8 +20,9 @@ const (
 
 func TestUserIntegration(t *testing.T) {
 	Convey("Given DB is setup properly", t, func() {
-		dsUser, _ := db.NewMongoStore(connStr, dbName, "users")
-		dsIntUser, _ := db.NewMongoStore(connStr, dbName, "userintegrations")
+		sess := db.InitMongoSession(connStr)
+		dsUser, _ := db.NewMongoStore(sess, dbName, "users")
+		dsIntUser, _ := db.NewMongoStore(sess, dbName, "userintegrations")
 
 		models.InitUserDBStore(dsUser)
 		models.InitUserIntegrationDBStore(dsIntUser)
@@ -60,7 +60,6 @@ func TestUserIntegration(t *testing.T) {
 		})
 
 		Reset(func() {
-			sess, _ := mgo.Dial(connStr)
 			defer sess.Close()
 			sess.DB(dbName).DropDatabase()
 		})

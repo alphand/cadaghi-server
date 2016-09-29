@@ -48,34 +48,35 @@ func (m *MongoDS) SetIndex(i interface{}) (err error) {
 }
 
 func (m *MongoDS) execMgoAction(f mgoAction) {
-	sess := m.session.Clone()
+	sess := m.session.Copy()
 	defer sess.Close()
 	c := sess.DB(m.DBName).C(m.ColName)
 	f(c)
 }
 
 // NewMongoStore - Create new MongoDB Handler
-func NewMongoStore(connStr, dbName, collName string) (IDataStore, error) {
-	m, err := initMongo(connStr)
-	if err != nil {
-		return nil, err
-	}
+func NewMongoStore(session *mgo.Session, dbName, collName string) (IDataStore, error) {
+	m := initMongo(session)
+
 	m.DBName = dbName
 	m.ColName = collName
 
 	return m, nil
 }
 
-func initMongo(connStr string) (*MongoDS, error) {
+func initMongo(session *mgo.Session) *MongoDS {
+	return &MongoDS{
+		session: session,
+	}
+}
+
+//InitMongoSession - initialize mongo connection
+func InitMongoSession(connStr string) *mgo.Session {
 	mongsess, err := mgo.Dial(connStr)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	mongsess.SetMode(mgo.Monotonic, true)
-	m := &MongoDS{
-		session: mongsess,
-	}
-
-	return m, nil
+	return mongsess
 }

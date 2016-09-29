@@ -8,12 +8,19 @@ import (
 	db "github.com/alphand/skilltree-server/database"
 )
 
+//InitFunc - function to initialize
+type InitFunc func(db.IDataStore)
+
 //DataStoreMW - datastore middleware
 type DataStoreMW struct {
-	ds db.IDataStore
+	ds   db.IDataStore
+	init InitFunc
 }
 
 func (d *DataStoreMW) setDSContext(ctx context.Context, storage db.IDataStore) context.Context {
+	if d.init != nil {
+		d.init(storage)
+	}
 	return context.WithValue(ctx, GetIDataStoreKey(), storage)
 }
 
@@ -25,9 +32,10 @@ func (d *DataStoreMW) ServeHTTP(rw http.ResponseWriter, req *http.Request, next 
 }
 
 //NewDataStoreMW - Create new Datastore middleware
-func NewDataStoreMW(ds db.IDataStore) *DataStoreMW {
+func NewDataStoreMW(ds db.IDataStore, f InitFunc) *DataStoreMW {
 	return &DataStoreMW{
-		ds: ds,
+		ds:   ds,
+		init: f,
 	}
 }
 
